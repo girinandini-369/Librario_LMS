@@ -1,0 +1,44 @@
+services:
+  # 1. The Database (MySQL)
+  - type: database
+    name: librario-db
+    databaseName: librario
+    user: admin
+    plan: free
+
+  # 2. The Backend (Spring Boot)
+  - type: web
+    name: librario-backend
+    env: java
+    plan: free
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: librario-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: librario-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: librario-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+
+  # 3. The Frontend (React)
+  - type: web
+    name: librario-frontend
+    env: static
+    plan: free
+    publishDir: frontend/dist
+    buildCommand: cd frontend && npm install && npm run build
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: librario-backend
+          property: host

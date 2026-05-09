@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Librario - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; }
+        .navbar { background-color: #2c3e50; }
+        .badge-admin { background-color: #e74c3c; }
+        .badge-member { background-color: #27ae60; }
+        .book-card { border: none; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 12px; }
+        .section-title { color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; margin-bottom: 15px; }
+        #addBookForm { display: none; background: #fff; padding: 15px; border-radius: 6px; margin-bottom: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark px-3 py-2 d-flex justify-content-between">
+        <span class="navbar-brand mb-0 h5">📚 Librario</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-white small" id="welcomeMsg"></span>
+            <span class="badge" id="roleBadge"></span>
+            <button class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+
+        <!-- Tab navigation -->
+        <ul class="nav nav-tabs mb-4" id="mainTabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="showTab('books')">Books</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showTab('myTransactions')">My Transactions</a>
+            </li>
+            <li class="nav-item" id="adminTabItem" style="display:none">
+                <a class="nav-link" href="#" onclick="showTab('activeLoans')">Active Loans (Admin)</a>
+            </li>
+        </ul>
+
+        <!-- Books Tab -->
+        <div id="tab-books">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="section-title mb-0">All Books</h5>
+                <button class="btn btn-sm btn-dark" id="toggleAddBook" style="display:none" onclick="toggleAddForm()">+ Add Book</button>
+            </div>
+
+            <!-- Add Book Form (Admin only) -->
+            <div id="addBookForm">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" id="bookTitle" placeholder="Title">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" id="bookAuthor" placeholder="Author">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" class="form-control form-control-sm" id="bookCopies" placeholder="Copies" min="1" value="1">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-sm btn-success w-100" onclick="addBook()">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="booksList"></div>
+        </div>
+
+        <!-- My Transactions Tab -->
+        <div id="tab-myTransactions" style="display:none">
+            <h5 class="section-title">My Borrowed Books</h5>
+            <div id="myTransactionsList"></div>
+        </div>
+
+        <!-- Active Loans Tab (Admin) -->
+        <div id="tab-activeLoans" style="display:none">
+            <h5 class="section-title">Active Loans</h5>
+            <div id="activeLoansList"></div>
+        </div>
+
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast-container">
+        <div id="toast" class="toast align-items-center border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMsg"></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API = 'http://localhost:8080/api';
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        const name = localStorage.getItem('name');
+
+        if (!token) window.location.href = 'index.html';
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+
+        // Setup UI based on role
+        document.getElementById('welcomeMsg').textContent = `Hi, ${name}`;
+        const badge = document.getElementById('roleBadge');
+        badge.textContent = role;
+        badge.className = `badge ${role === 'ADMIN' ? 'badge-admin' : 'badge-member'}`;
+
+        if (role === 'ADMIN') {
+            document.getElementById('toggleAddBook').style.display = 'inline-block';
+            document.getElementById('adminTabItem').style.display = 'block';
+        }
+
+        // Tab switching
+        function showTab(tab) {
+            ['books', 'myTransactions', 'activeLoans'].forEach(t => {
+                document.getElementById(`tab-${t}`).style.display = 'none';
+            });
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'myTransactions') loadMyTransactions();
+            if (tab === 'activeLoans') loadActiveLoans();
+            if (tab === 'books') loadBooks();
+        }
+
+        // Toast
+        function showToast(msg, success = true) {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('bg-success', 'bg-danger', 'text-white');
+            toast.classList.add(success ? 'bg-success' : 'bg-danger', 'text-white');
+            document.getElementById('toastMsg').textContent = msg;
+            new bootstrap.Toast(toast, { delay: 3000 }).show();
+        }
+
+        // Load books
+        async function loadBooks() {
+            const res = await fetch(`${API}/books`, { headers });
+            const books = await res.json();
+            const container = document.getElementById('booksList');
+
+            if (books.length === 0) {
+                container.innerHTML = '<p class="text-muted">No books found.</p>';
+                return;
+            }
+
+            container.innerHTML = books.map(book => `
+                <div class="card book-card">
+                    <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${book.title}</strong>
+                            <span class="text-muted small"> by ${book.author}</span>
+                            <span class="badge bg-secondary ms-2">${book.availableCopies} copies</span>
+                        </div>
+                        <div class="d-flex gap-1">
+                            ${book.availableCopies > 0
+                                ? `<button class="btn btn-sm btn-outline-success" onclick="issueBook(${book.id})">Issue</button>`
+                                : `<span class="badge bg-warning text-dark">Unavailable</span>`
+                            }
+                            <button class="btn btn-sm btn-outline-primary" onclick="returnBook(${book.id})">Return</button>
+                            ${role === 'ADMIN'
+                                ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteBook(${book.id})">Delete</button>`
+                                : ''
+                            }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Add book (admin)
+        async function addBook() {
+            const title = document.getElementById('bookTitle').value.trim();
+            const author = document.getElementById('bookAuthor').value.trim();
+            const copies = document.getElementById('bookCopies').value;
+
+            if (!title || !author) { showToast('Title and author required', false); return; }
+
+            const res = await fetch(`${API}/books`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ title, author, availableCopies: parseInt(copies) })
+            });
+
+            if (res.ok) {
+                showToast('Book added!');
+                document.getElementById('bookTitle').value = '';
+                document.getElementById('bookAuthor').value = '';
+                document.getElementById('bookCopies').value = '1';
+                loadBooks();
+            } else {
+                const d = await res.json();
+                showToast(d.message || 'Failed to add book', false);
+            }
+        }
+
+        // Delete book (admin)
+        async function deleteBook(id) {
+            if (!confirm('Delete this book?')) return;
+            const res = await fetch(`${API}/books/${id}`, { method: 'DELETE', headers });
+            if (res.ok) { showToast('Book deleted'); loadBooks(); }
+            else showToast('Failed to delete', false);
+        }
+
+        // Issue book
+        async function issueBook(bookId) {
+            const res = await fetch(`${API}/transactions/issue`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ bookId })
+            });
+            const d = await res.json();
+            if (res.ok) { showToast('Book issued! Return within 14 days.'); loadBooks(); }
+            else showToast(d.message || 'Issue failed', false);
+        }
+
+        // Return book
+        async function returnBook(bookId) {
+            const res = await fetch(`${API}/transactions/return`, {
+                method: 'POST', headers,
+                body: JSON.stringify({ bookId })
+            });
+            const d = await res.json();
+            if (res.ok) {
+                const fine = d.fine > 0 ? ` Fine: ₹${d.fine}` : '';
+                showToast(`Book returned.${fine}`);
+                loadBooks();
+            } else {
+                showToast(d.message || 'Return failed', false);
+            }
+        }
+
+        // My transactions
+        async function loadMyTransactions() {
+            const res = await fetch(`${API}/transactions/my`, { headers });
+            const list = await res.json();
+            const container = document.getElementById('myTransactionsList');
+
+            if (list.length === 0) {
+                container.innerHTML = '<p class="text-muted">No transactions yet.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table table-sm table-bordered bg-white">
+                    <thead class="table-dark">
+                        <tr><th>Book</th><th>Issue Date</th><th>Return Date</th><th>Fine</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        ${list.map(t => `
+                            <tr>
+                                <td>${t.book.title}</td>
+                                <td>${t.issueDate}</td>
+                                <td>${t.returnDate || '-'}</td>
+                                <td>₹${t.fine}</td>
+                                <td>${t.returnDate ? '<span class="badge bg-success">Returned</span>' : '<span class="badge bg-warning text-dark">Borrowed</span>'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Active loans (admin)
+        async function loadActiveLoans() {
+            const res = await fetch(`${API}/transactions/active`, { headers });
+            const list = await res.json();
+            const container = document.getElementById('activeLoansList');
+
+            if (list.length === 0) {
+                container.innerHTML = '<p class="text-muted">No active loans.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table table-sm table-bordered bg-white">
+                    <thead class="table-dark">
+                        <tr><th>Member</th><th>Book</th><th>Issue Date</th><th>Due Date</th></tr>
+                    </thead>
+                    <tbody>
+                        ${list.map(t => {
+                            const due = new Date(t.issueDate);
+                            due.setDate(due.getDate() + 14);
+                            const dueStr = due.toISOString().split('T')[0];
+                            const isOverdue = new Date() > due;
+                            return `
+                                <tr class="${isOverdue ? 'table-danger' : ''}">
+                                    <td>${t.user.name}</td>
+                                    <td>${t.book.title}</td>
+                                    <td>${t.issueDate}</td>
+                                    <td>${dueStr} ${isOverdue ? '⚠️ Overdue' : ''}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function toggleAddForm() {
+            const form = document.getElementById('addBookForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // Initial load
+        loadBooks();
+    </script>
+</body>
+</html>
