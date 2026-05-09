@@ -1,5 +1,5 @@
-# Use an official JDK 21 image
-FROM eclipse-temurin:21-jdk-jammy as build
+# Use a Maven image to build the project
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Set working directory
 WORKDIR /app
@@ -7,10 +7,10 @@ WORKDIR /app
 # Copy the project files
 COPY . .
 
-# Build the application (skipping tests for speed)
-RUN ./mvnw clean package -DskipTests
+# Build the application using the pre-installed 'mvn' command
+RUN mvn clean package -DskipTests
 
-# Run the application
+# Run the application using a lightweight JRE image
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
