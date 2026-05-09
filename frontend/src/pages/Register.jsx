@@ -32,7 +32,18 @@ const Register = () => {
             <div className="mb-3">
               <input type="password" placeholder="Password" className="form-control" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
             </div>
-            <button type="submit" className="btn btn-success w-100">Register</button>
+            <div className="mb-3 text-start">
+          <label className="form-label text-secondary small">ACCOUNT TYPE</label>
+          <select 
+            className="form-control" 
+            value={formData.role} 
+            onChange={e => setFormData({...formData, role: e.target.value})}
+          >
+            <option value="MEMBER">MEMBER (Student)</option>
+            <option value="ADMIN">ADMIN (Librarian)</option>
+          </select>
+        </div>
+        <button type="submit" className="btn-register">CREATE ACCOUNT</button>
           </form>
           <p className="mt-3 text-center">Already have an account? <Link to="/login">Login</Link></p>
           <div className="text-center mt-2">
