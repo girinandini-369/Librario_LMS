@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 
 const Dashboard = ({ user }) => {
   const [books, setBooks] = useState([])
@@ -17,7 +17,7 @@ const Dashboard = ({ user }) => {
 
   const fetchBooks = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/books', {
+      const response = await api.get('/api/books', {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       setBooks(response.data)
@@ -27,7 +27,7 @@ const Dashboard = ({ user }) => {
   const fetchMyBooks = async () => {
     if (user.role !== 'MEMBER') return;
     try {
-      const response = await axios.get('http://localhost:8080/api/transactions/my-books', {
+      const response = await api.get('/api/transactions/my-books', {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       setMyBooks(response.data)
@@ -37,7 +37,7 @@ const Dashboard = ({ user }) => {
   const fetchUsers = async () => {
     if (user.role !== 'ADMIN') return;
     try {
-      const response = await axios.get('http://localhost:8080/api/auth/users', {
+      const response = await api.get('/api/auth/users', {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       setUsersList(response.data)
@@ -49,12 +49,12 @@ const Dashboard = ({ user }) => {
     e.preventDefault()
     try {
       if (editingBook) {
-        await axios.put(`http://localhost:8080/api/books/${editingBook.id}`, newBook, {
+        await api.put(`/api/books/${editingBook.id}`, newBook, {
           headers: { Authorization: `Bearer ${user.token}` }
         })
         setEditingBook(null)
       } else {
-        await axios.post('http://localhost:8080/api/books', newBook, {
+        await api.post('/api/books', newBook, {
           headers: { Authorization: `Bearer ${user.token}` }
         })
       }
@@ -66,7 +66,7 @@ const Dashboard = ({ user }) => {
   const handleDeleteBook = async (id) => {
     if (window.confirm('Delete this book?')) {
       try {
-        await axios.delete(`http://localhost:8080/api/books/${id}`, {
+        await api.delete(`/api/books/${id}`, {
           headers: { Authorization: `Bearer ${user.token}` }
         })
         fetchBooks()
@@ -78,7 +78,7 @@ const Dashboard = ({ user }) => {
   const handleUserSubmit = async (e) => {
     e.preventDefault()
     try {
-      await axios.post('http://localhost:8080/api/auth/admin/add-member', newUser, {
+      await api.post('/api/auth/admin/add-member', newUser, {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       setNewUser({ name: '', email: '', password: '', role: 'MEMBER' })
@@ -90,7 +90,7 @@ const Dashboard = ({ user }) => {
     if (userEmail === user.email) return;
     if (window.confirm('Delete this user?')) {
       try {
-        await axios.delete(`http://localhost:8080/api/auth/users/${userId}`, {
+        await api.delete(`/api/auth/users/${userId}`, {
           headers: { Authorization: `Bearer ${user.token}` }
         })
         fetchUsers()
@@ -101,7 +101,7 @@ const Dashboard = ({ user }) => {
   // TRANSACTION ACTIONS
   const handleIssue = async (id) => {
     try {
-      await axios.post('http://localhost:8080/api/transactions/issue', { bookId: id }, {
+      await api.post('/api/transactions/issue', { bookId: id }, {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       fetchBooks(); fetchMyBooks();
@@ -110,7 +110,7 @@ const Dashboard = ({ user }) => {
 
   const handleReturn = async (id) => {
     try {
-      const res = await axios.post('http://localhost:8080/api/transactions/return', { bookId: id }, {
+      const res = await api.post('/api/transactions/return', { bookId: id }, {
         headers: { Authorization: `Bearer ${user.token}` }
       })
       alert(`Returned. Fine: ₹${res.data.fine}`); fetchBooks(); fetchMyBooks();

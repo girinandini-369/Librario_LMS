@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../api/axios'
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' })
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'MEMBER' })
   const navigate = useNavigate()
 
   const handleRegister = async (e) => {
     e.preventDefault()
     try {
-      await axios.post('http://localhost:8080/api/auth/register', formData)
+      await api.post('/api/auth/register', formData)
       alert('Registration successful! Please login.')
       navigate('/login')
     } catch (err) {
