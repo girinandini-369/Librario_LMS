@@ -2,10 +2,9 @@ services:
   # 1. The Backend (Spring Boot)
   - type: web
     name: librario-backend
-    env: java
+    env: docker
+    dockerfilePath: backend/Dockerfile
     plan: free
-    buildCommand: ./mvnw clean package -DskipTests
-    startCommand: java -jar target/*.jar
     envVars:
       - key: SPRING_DATASOURCE_URL
         sync: false # You will paste your MySQL URL here in the Render Dashboard
