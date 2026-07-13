@@ -3,7 +3,6 @@ services:
   - type: web
     name: librario-backend
     env: docker
-    dockerfilePath: backend/Dockerfile
     plan: free
     envVars:
       - key: SPRING_DATASOURCE_URL
