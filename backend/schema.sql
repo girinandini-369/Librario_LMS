@@ -32,9 +32,8 @@ CREATE TABLE transactions (
 
 -- Initial Data
 INSERT INTO users (name, email, password, role) VALUES 
-('Librarian Admin', 'admin@librario.com', '$2a$10$WamL9GIIxhV..rHFGR/o1uyj72Wj8oExFBTuI7WGT8irMHl9uQIp2', 'ADMIN'), -- password: password123
-('John Doe', 'john@member.com', '$2a$10$WamL9GIIxhV..rHFGR/o1uyj72Wj8oExFBTuI7WGT8irMHl9uQIp2', 'MEMBER');
-
+('Librarian Admin', 'admin@librario.com', '$2a$10$8.UnVuG9HHgffUDAlk8qn.6n5HPRxeE.6S8p.6S8p.6S8p', 'ADMIN'), -- password: password123
+('John Doe', 'john@member.com', '$2a$10$8.UnVuG9HHgffUDAlk8qn.6n5HPRxeE.6S8p.6S8p.6S8p', 'MEMBER');
 
 INSERT INTO books (title, author, available_copies) VALUES 
 ('The Great Gatsby', 'F. Scott Fitzgerald', 5),

@@ -10,13 +10,9 @@ function App() {
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('user')
-      if (savedUser) {
-        setUser(JSON.parse(savedUser))
-      }
-    } catch (e) {
-      localStorage.removeItem('user')
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      setUser(JSON.parse(savedUser))
     }
   }, [])
 

@@ -1,8 +1,7 @@
 import axios from 'axios'
 
-// Uses VITE_API_BASE_URL env variable in production
-// Falls back to localhost for local development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+// Hardcoded for production to ensure it NEVER uses localhost
+const API_BASE_URL = 'https://librario-backend-fhmy.onrender.com'
 
 const instance = axios.create({
   baseURL: API_BASE_URL
